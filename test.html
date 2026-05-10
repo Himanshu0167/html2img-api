@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>html2img-api Test Page</title>
+  <style>
+    :root {
+      --bg: #f4efe7;
+      --surface: rgba(255, 252, 248, 0.94);
+      --surface-strong: #fffdf9;
+      --ink: #14243d;
+      --muted: #58677c;
+      --line: rgba(20, 36, 61, 0.12);
+      --accent: #c2410c;
+      --accent-2: #0f766e;
+      --danger: #b91c1c;
+      --ok: #166534;
+      --shadow: 0 22px 54px rgba(20, 36, 61, 0.14);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(194, 65, 12, 0.18), transparent 35%),
+        radial-gradient(circle at top right, rgba(15, 118, 110, 0.16), transparent 32%),
+        linear-gradient(180deg, #fbf7f1 0%, var(--bg) 100%);
+    }
+
+    a {
+      color: inherit;
+    }
+
+    .page {
+      width: min(1220px, calc(100% - 28px));
+      margin: 22px auto 40px;
+    }
+
+    .hero,
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 28px;
+      background:
+        linear-gradient(135deg, rgba(20, 36, 61, 0.96), rgba(31, 41, 55, 0.96)),
+        var(--surface);
+      color: #fff7ed;
+    }
+
+    .hero-grid,
+    .content-grid,
+    .mini-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .hero-grid {
+      grid-template-columns: 1.3fr 0.9fr;
+      align-items: start;
+    }
+
+    .content-grid {
+      margin-top: 18px;
+      grid-template-columns: 1.12fr 0.88fr;
+      align-items: start;
+    }
+
+    .mini-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .eyebrow,
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .eyebrow {
+      background: rgba(255, 247, 237, 0.14);
+      border: 1px solid rgba(255, 247, 237, 0.18);
+    }
+
+    .pill {
+      letter-spacing: 0;
+      text-transform: none;
+      border: 1px solid var(--line);
+      background: var(--surface-strong);
+      color: var(--ink);
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      margin-top: 16px;
+      font-size: clamp(2.1rem, 5vw, 4.4rem);
+      line-height: 0.98;
+      font-weight: 600;
+    }
+
+    h2 {
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+    }
+
+    h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .hero p {
+      margin-top: 14px;
+      color: rgba(255, 247, 237, 0.84);
+      line-height: 1.6;
+      max-width: 62ch;
+    }
+
+    .hero-actions {
+      margin-top: 18px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .button,
+    button {
+      appearance: none;
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font: inherit;
+      cursor: pointer;
+      transition: transform 160ms ease, opacity 160ms ease;
+      text-decoration: none;
+    }
+
+    .button:hover,
+    button:hover {
+      transform: translateY(-1px);
+    }
+
+    .button.primary,
+    button.primary {
+      background: #fff7ed;
+      color: #9a3412;
+    }
+
+    .button.secondary,
+    button.secondary {
+      background: transparent;
+      color: #fff7ed;
+      border: 1px solid rgba(255, 247, 237, 0.18);
+    }
+
+    .panel {
+      padding: 22px;
+    }
+
+    .stack {
+      display: grid;
+      gap: 18px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      border: 1px solid rgba(20, 36, 61, 0.16);
+      border-radius: 16px;
+      background: #fffdf9;
+      color: var(--ink);
+      font: inherit;
+      padding: 12px 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 230px;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre,
+    .output-box {
+      margin: 0;
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #111827;
+      color: #f9fafb;
+      overflow: auto;
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    code {
+      font-family: Consolas, "Courier New", monospace;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: #fff7ed;
+    }
+
+    button.ghost {
+      background: var(--surface-strong);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .status {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .status.ok {
+      color: var(--ok);
+    }
+
+    .status.error {
+      color: var(--danger);
+    }
+
+    .preview-frame {
+      width: 100%;
+      min-height: 520px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+    }
+
+    .image-preview {
+      width: 100%;
+      max-height: 520px;
+      object-fit: contain;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fff;
+      display: none;
+    }
+
+    .doc-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .doc-item {
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--surface-strong);
+    }
+
+    .doc-item strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    @media (max-width: 920px) {
+      .hero-grid,
+      .content-grid,
+      .mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100% - 16px, 1220px);
+      }
+
+      .hero,
+      .panel {
+        padding: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <span class="eyebrow">Standalone tester</span>
+          <h1>Paste HTML and CSS. Send it to the API. Inspect the returned file.</h1>
+          <p>This page sends your markup to <code>https://html2img-api.vercel.app/</code> with <code>api=1</code>. HTML and CSS are merged into a single document before the request is made.</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#tester">Start testing</a>
+            <a class="button secondary" href="https://html2img-api.vercel.app/" target="_blank" rel="noreferrer">Open API root</a>
+          </div>
+        </div>
+        <div class="panel" style="padding:18px;background:rgba(255,252,248,0.08);border-color:rgba(255,247,237,0.14);">
+          <h2 style="margin-bottom:12px;">Current deployment note</h2>
+          <p style="color:rgba(255,247,237,0.84);line-height:1.6;">The ready response you shared shows <code>imagickAvailable: false</code>. That means <code>application/pdf</code> works on this Vercel deployment, but raster output like <code>image/png</code> or <code>image/jpeg</code> currently comes back as a <code>501</code> error with PDF fallback data.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="content-grid">
+      <div class="stack">
+        <section class="panel" id="tester">
+          <h2>Live Test Form</h2>
+          <div class="stack">
+            <label>
+              API endpoint
+              <input id="endpoint" type="url" value="https://html2img-api.vercel.app/">
+            </label>
+            <div class="mini-grid">
+              <label>
+                Output type
+                <select id="imgType">
+                  <option value="application/pdf">application/pdf</option>
+                  <option value="image/png">image/png</option>
+                  <option value="image/jpeg">image/jpeg</option>
+                  <option value="image/pjpeg">image/pjpeg</option>
+                  <option value="image/gif">image/gif</option>
+                  <option value="image/tiff">image/tiff</option>
+                </select>
+              </label>
+              <label>
+                File name prefix
+                <input id="imgNamePref" type="text" value="live-test">
+              </label>
+              <label>
+                Width
+                <input id="w" type="number" min="1" value="1200">
+              </label>
+              <label>
+                Height
+                <input id="h" type="number" min="1" value="1200">
+              </label>
+            </div>
+            <label>
+              HTML
+              <textarea id="htmlInput"></textarea>
+            </label>
+            <label>
+              CSS
+              <textarea id="cssInput"></textarea>
+            </label>
+            <div class="row">
+              <button class="primary" id="sendBtn" type="button">Send request</button>
+              <button class="ghost" id="resetBtn" type="button">Reset sample</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Payload</h2>
+          <pre id="requestPreview">{}</pre>
+        </section>
+
+        <section class="panel">
+          <h2>Response</h2>
+          <pre id="responsePreview">No request sent yet.</pre>
+        </section>
+      </div>
+
+      <div class="stack">
+        <section class="panel">
+          <h2>Preview</h2>
+          <p class="status" id="statusText">Waiting for a request.</p>
+          <div class="row" style="margin-top:12px;margin-bottom:12px;">
+            <span class="pill">PDF preview is supported here</span>
+            <span class="pill">Raster preview appears if the API returns a data URI</span>
+          </div>
+          <iframe id="pdfPreview" class="preview-frame" title="PDF preview" hidden></iframe>
+          <img id="imagePreview" class="image-preview" alt="Generated result preview">
+        </section>
+
+        <section class="panel">
+          <h2>Docs</h2>
+          <div class="doc-list">
+            <div class="doc-item">
+              <strong>Endpoint</strong>
+              <code>https://html2img-api.vercel.app/</code>
+            </div>
+            <div class="doc-item">
+              <strong>Required request fields</strong>
+              <code>api=1</code>, <code>html</code>, <code>imgType</code>
+            </div>
+            <div class="doc-item">
+              <strong>Optional request fields</strong>
+              <code>w</code>, <code>h</code>, <code>imgNamePref</code>
+            </div>
+            <div class="doc-item">
+              <strong>How this page builds the HTML payload</strong>
+              It wraps your CSS inside a <code>&lt;style&gt;</code> tag and appends your HTML body markup into one HTML document string.
+            </div>
+            <div class="doc-item">
+              <strong>Current limitation</strong>
+              On the deployment you described, raster outputs are not produced because Imagick is unavailable. PDF still works and is shown in the preview.
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sampleHtml = `<div class="card">
+  <span class="kicker">html2img-api</span>
+  <h1>Rendered from test.html</h1>
+  <p>This block combines your HTML and CSS into one payload before it is sent to the API.</p>
+  <div class="stats">
+    <div><strong>Format</strong><span>application/pdf</span></div>
+    <div><strong>Status</strong><span>Ready to test</span></div>
+  </div>
+</div>`;
+
+    const sampleCss = `body {
+  margin: 0;
+  padding: 40px;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #fff7ed, #fde68a);
+  color: #1f2937;
+}
+
+.card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 32px;
+  border-radius: 28px;
+  background: white;
+  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.18);
+}
+
+.kicker {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #ffedd5;
+  color: #9a3412;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0 0 12px;
+  font-size: 40px;
+}
+
+p {
+  margin: 0 0 20px;
+  line-height: 1.6;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stats div {
+  padding: 16px;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.stats strong,
+.stats span {
+  display: block;
+}
+
+.stats strong {
+  margin-bottom: 4px;
+  color: #475569;
+}`;
+
+    const endpointEl = document.getElementById("endpoint");
+    const imgTypeEl = document.getElementById("imgType");
+    const imgNamePrefEl = document.getElementById("imgNamePref");
+    const widthEl = document.getElementById("w");
+    const heightEl = document.getElementById("h");
+    const htmlInputEl = document.getElementById("htmlInput");
+    const cssInputEl = document.getElementById("cssInput");
+    const requestPreviewEl = document.getElementById("requestPreview");
+    const responsePreviewEl = document.getElementById("responsePreview");
+    const statusTextEl = document.getElementById("statusText");
+    const pdfPreviewEl = document.getElementById("pdfPreview");
+    const imagePreviewEl = document.getElementById("imagePreview");
+
+    function resetSample() {
+      htmlInputEl.value = sampleHtml;
+      cssInputEl.value = sampleCss;
+      imgTypeEl.value = "application/pdf";
+      imgNamePrefEl.value = "live-test";
+      widthEl.value = "1200";
+      heightEl.value = "1200";
+    }
+
+    function buildHtmlDocument() {
+      const css = cssInputEl.value.trim();
+      const html = htmlInputEl.value.trim();
+
+      return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>${css}</style>
+</head>
+<body>
+${html}
+</body>
+</html>`;
+    }
+
+    async function sendRequest() {
+      const payload = {
+        api: 1,
+        html: buildHtmlDocument(),
+        imgType: imgTypeEl.value,
+        imgNamePref: imgNamePrefEl.value.trim(),
+        w: Number(widthEl.value || 1200),
+        h: Number(heightEl.value || 1200)
+      };
+
+      requestPreviewEl.textContent = JSON.stringify(payload, null, 2);
+      responsePreviewEl.textContent = "Loading...";
+      statusTextEl.textContent = "Sending request...";
+      statusTextEl.className = "status";
+      pdfPreviewEl.hidden = true;
+      pdfPreviewEl.removeAttribute("src");
+      imagePreviewEl.style.display = "none";
+      imagePreviewEl.removeAttribute("src");
+
+      try {
+        const response = await fetch(endpointEl.value.trim(), {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        responsePreviewEl.textContent = JSON.stringify(data, null, 2);
+
+        if (!response.ok || data.action !== "success") {
+          statusTextEl.textContent = `Request failed with HTTP ${response.status}.`;
+          statusTextEl.className = "status error";
+
+          if (data.fallback && data.fallback.base64) {
+            pdfPreviewEl.src = `data:application/pdf;base64,${data.fallback.base64}`;
+            pdfPreviewEl.hidden = false;
+            statusTextEl.textContent += " Showing PDF fallback returned by the API.";
+          }
+          return;
+        }
+
+        statusTextEl.textContent = `Success: ${data.contentType}`;
+        statusTextEl.className = "status ok";
+
+        if (data.contentType === "application/pdf" && data.dataUri) {
+          pdfPreviewEl.src = data.dataUri;
+          pdfPreviewEl.hidden = false;
+          return;
+        }
+
+        if (data.dataUri) {
+          imagePreviewEl.src = data.dataUri;
+          imagePreviewEl.style.display = "block";
+          return;
+        }
+
+        statusTextEl.textContent = "The request succeeded, but no preview payload was returned.";
+        statusTextEl.className = "status error";
+      } catch (error) {
+        responsePreviewEl.textContent = String(error);
+        statusTextEl.textContent = "Network or parsing error while calling the API.";
+        statusTextEl.className = "status error";
+      }
+    }
+
+    document.getElementById("sendBtn").addEventListener("click", sendRequest);
+    document.getElementById("resetBtn").addEventListener("click", resetSample);
+    resetSample();
+  </script>
+</body>
+</html>

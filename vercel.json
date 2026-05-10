@@ -7,6 +7,10 @@
     ],
     "routes": [
         {
+            "src": "/test\\.html",
+            "dest": "/test.html"
+        },
+        {
             "src": "/(.*)",
             "dest": "/index.php"
         }
