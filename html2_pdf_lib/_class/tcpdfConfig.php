@@ -62,6 +62,8 @@ if (!defined('K_TCPDF_EXTERNAL_CONFIG')) {
     $kPathMain.= '_tcpdf_'.HTML2PDF_USED_TCPDF_VERSION.'/';
     define('K_PATH_MAIN', $kPathMain);
 
+    $kPathUrl = '';
+
     // Automatic calculation for the following K_PATH_URL constant
     if (isset($_SERVER['HTTP_HOST']) AND (!empty($_SERVER['HTTP_HOST']))) {
         if (isset($_SERVER['HTTPS']) AND (!empty($_SERVER['HTTPS'])) AND strtolower($_SERVER['HTTPS'])!='off') {
@@ -71,6 +73,8 @@ if (!defined('K_TCPDF_EXTERNAL_CONFIG')) {
         }
         $kPathUrl .= $_SERVER['HTTP_HOST'];
         $kPathUrl .= str_replace('\\', '/', substr(K_PATH_MAIN, (strlen($_SERVER['DOCUMENT_ROOT']) - 1)));
+    } else {
+        $kPathUrl = K_PATH_MAIN;
     }
 
     /**

@@ -1,189 +1,195 @@
 <?php
-/** 
- * @package: html2img-api
- * @author: @_thinkholic
- * @version: v0.1 02012015
- *
- * @credits: http://buffernow.com/html-to-image-php-script/
- *
- */
-require_once('html2_pdf_lib/html2pdf.class.php');
 
-# TimeZone Settings
-//date_default_timezone_set("Asia/Colombo");
-$timestamp = strtotime(date("Y-m-d H:i:s"));
+require_once __DIR__ . '/vendor/autoload.php';
 
-# Status
-$status = array(  
-    100 => 'Continue',
-    101 => 'Switching Protocols',
-    200 => 'OK',
-    201 => 'Created',
-    202 => 'Accepted',
-    203 => 'Non-Authoritative Information',
-    204 => 'No Content',
-    205 => 'Reset Content',
-    206 => 'Partial Content',
-    300 => 'Multiple Choices',
-    301 => 'Moved Permanently',
-    302 => 'Found',
-    303 => 'See Other',
-    304 => 'Not Modified',
-    305 => 'Use Proxy',
-    307 => 'Temporary Redirect',
-    400 => 'Bad Request',
-    401 => 'Unauthorized',
-    402 => 'Payment Required',
-    403 => 'Forbidden',
-    404 => 'Not Found',
-    405 => 'Method Not Allowed',
-    406 => 'Not Acceptable',
-    407 => 'Proxy Authentication Required',
-    408 => 'Request Time-out',
-    409 => 'Conflict',
-    410 => 'Gone',
-    411 => 'Length Required',
-    412 => 'Precondition Failed',
-    413 => 'Request Entity Too Large',
-    414 => 'Request-URI Too Large',
-    415 => 'Unsupported Media Type',
-    416 => 'Requested range not satisfiable',
-    417 => 'Expectation Failed',
-    500 => 'Internal Server Error',
-    501 => 'Not Implemented',
-    502 => 'Bad Gateway',
-    503 => 'Service Unavailable',
-    504 => 'Gateway Time-out',
-    505 => 'HTTP Version not supported'
-);
+use Spipu\Html2Pdf\Exception\Html2PdfException;
+use Spipu\Html2Pdf\Html2Pdf;
 
-# Respond inits
-$data['statusCode'] = 400;
-$data['contentType'] = 'application/json';
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
 
-# Headers
-header("Access-Control-Allow-Orgin: *");
-header("Access-Control-Allow-Methods: *");
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
-# Respond inits
-$data['validToken'] = FALSE;
-$data['requestTimestamp'] = $timestamp;
-
-if ( isset( $_REQUEST['api'] ) && ( $_REQUEST['api'] ) )
+function respondJson(int $statusCode, array $payload): void
 {
-    $flag = FALSE;
-    
-    # validate the Request
-    if ( (isset($_REQUEST['html'])) && (isset($_REQUEST['imgType'])) )
-    {
-        $flag = TRUE;
-    }
-    
-    # Media Type Array for Images
-    $mediaType = array(
-        'image/gif' => array(
-                            'ext' => 'gif',
-                            'desc' => 'GIF image'
-                        ),
-        'image/jpeg' => array(
-                            'ext' => 'jpg',
-                            'desc' => 'JPEG JFIF image'
-                        ),
-        'image/pjpeg' => array(
-                            'ext' => 'jpeg',
-                            'desc' => 'JPEG JFIF'
-                        ),
-        'image/png' => array(
-                            'ext' => 'png',
-                            'desc' => 'Portable Network Graphics'
-                        ),
-        'image/svg+xml' => array(
-                            'ext' => 'svg',
-                            'desc' => 'SVG'
-                        ),
-        'image/tiff' => array(
-                            'ext' => 'tiff',
-                            'desc' => 'TIFF image'
-                        ),
-        'image/vnd.djvu' => array(
-                            'ext' => 'djvu',
-                            'desc' => 'DJVU image'
-                        ),
+    http_response_code($statusCode);
+    header('Content-Type: application/json');
+    echo json_encode(
+        $payload,
+        JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
     );
-    
-    if ( $flag )
-    {
-        # Read Request Param
-        $html = $_REQUEST['html'];
+    exit;
+}
 
-        $imgNamePref = time();
-        if ( isset($_REQUEST['imgNamePref']) )
-        {
-            $imgNamePref = $_REQUEST['imgNamePref'];
-        }
+function getRequestData(): array
+{
+    $data = $_REQUEST;
+    $rawBody = file_get_contents('php://input');
+    if (!$rawBody) {
+        return $data;
+    }
 
-        $imgType = $_REQUEST['imgType'];
-        $imgExt = $mediaType[$imgType]['ext'];
+    $decoded = json_decode($rawBody, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+        return array_merge($data, $decoded);
+    }
 
-        $w = 400;
-        if ( isset($_REQUEST['w']) ) { $w = $_REQUEST['w']; }
+    return $data;
+}
 
-        $h = 400;
-        if ( isset($_REQUEST['h']) ) { $w = $_REQUEST['h']; }
+function normalizeDimension($value, int $default): int
+{
+    if ($value === null || $value === '') {
+        return $default;
+    }
 
-        # Buffering
-        ob_start();  
-        print $html;
-        $imgData = ob_get_clean();
-        ob_clean ();
+    $dimension = (int) $value;
+    return $dimension > 0 ? $dimension : $default;
+}
 
-        try
-        {
-            # JSON Respond
-            $data['action'] = "success";
+function createPdfFromHtml(string $html): string
+{
+    $html2pdf = new Html2Pdf('P', 'A4', 'en');
+    $html2pdf->setDefaultFont('courier');
+    $html2pdf->writeHTML($html);
+    return $html2pdf->Output('', 'S');
+}
 
-            # Generate PDF
-            $html2pdf = new HTML2PDF('P', 'A4', 'en');
-            //$html2pdf->setModeDebug();
-            $html2pdf->setDefaultFont('courier');
-            $html2pdf->writeHTML($imgData);
-            $file = $html2pdf->Output('temp.pdf','F');
+function convertPdfToImage(string $pdfBinary, string $format, int $width, int $height): string
+{
+    $tempFile = tempnam(sys_get_temp_dir(), 'html2img_');
+    if ($tempFile === false) {
+        throw new RuntimeException('Unable to allocate a temporary file.');
+    }
 
-            # Generate Image
-            $im = new imagick('temp.pdf');
-            $im->setImageFormat( $imgExt );
-            $imgName = $imgNamePref.'.'.$imgExt;
-            $im->setSize($w,$h);
-            $im->writeImage( $imgName );
-            $im->clear();
-            $im->destroy(); 
+    $pdfPath = $tempFile . '.pdf';
+    rename($tempFile, $pdfPath);
+    file_put_contents($pdfPath, $pdfBinary);
 
-            # Remove temp pdf
-            unlink('temp.pdf');
-
-            # JSON Respond
-            $data['imgPath'] = $imgName;
-            $data['statusCode'] = 200;
-
-        }
-        catch(HTML2PDF_exception $e)
-        {
-            # JSON Respond
-            $data['action'] = "fail";
-            $data['error'] = $e;
-            //exit;
+    try {
+        $imagick = new Imagick();
+        $imagick->setResolution(144, 144);
+        $imagick->readImage($pdfPath . '[0]');
+        $imagick->setImageBackgroundColor('white');
+        $imagick = $imagick->mergeImageLayers(Imagick::LAYERMETHOD_FLATTEN);
+        $imagick->setImageFormat($format);
+        $imagick->thumbnailImage($width, $height, true, true);
+        $blob = $imagick->getImagesBlob();
+        $imagick->clear();
+        $imagick->destroy();
+        return $blob;
+    } finally {
+        if (file_exists($pdfPath)) {
+            unlink($pdfPath);
         }
     }
 }
 
- # JSON Respond
-$data['status'] = $status[$data['statusCode']];
+$request = getRequestData();
+$requestTimestamp = time();
 
-# headers again
-header('Content-Type: application/json');
-header("HTTP/1.1 " . $data['statusCode'] . " " . $data['status']);
+$mediaTypes = array(
+    'application/pdf' => array('ext' => 'pdf', 'format' => 'pdf'),
+    'image/gif' => array('ext' => 'gif', 'format' => 'gif'),
+    'image/jpeg' => array('ext' => 'jpg', 'format' => 'jpeg'),
+    'image/pjpeg' => array('ext' => 'jpeg', 'format' => 'jpeg'),
+    'image/png' => array('ext' => 'png', 'format' => 'png'),
+    'image/tiff' => array('ext' => 'tiff', 'format' => 'tiff'),
+);
 
-# return respond
-print json_encode($data);
+if (empty($request['api'])) {
+    respondJson(200, array(
+        'action' => 'ready',
+        'message' => 'Send api=1, html, and imgType.',
+        'requestTimestamp' => $requestTimestamp,
+        'supportedTypes' => array_keys($mediaTypes),
+        'imagickAvailable' => extension_loaded('imagick'),
+    ));
+}
 
-// EOF.
+if (empty($request['html']) || empty($request['imgType'])) {
+    respondJson(400, array(
+        'action' => 'fail',
+        'error' => 'Both html and imgType are required.',
+        'requestTimestamp' => $requestTimestamp,
+    ));
+}
+
+$imgType = strtolower((string) $request['imgType']);
+if (!isset($mediaTypes[$imgType])) {
+    respondJson(415, array(
+        'action' => 'fail',
+        'error' => 'Unsupported imgType.',
+        'requestTimestamp' => $requestTimestamp,
+        'supportedTypes' => array_keys($mediaTypes),
+    ));
+}
+
+$html = (string) $request['html'];
+$width = normalizeDimension($request['w'] ?? null, 1200);
+$height = normalizeDimension($request['h'] ?? null, 1200);
+$namePrefix = preg_replace('/[^a-zA-Z0-9._-]/', '-', (string) ($request['imgNamePref'] ?? time()));
+$namePrefix = trim($namePrefix, '-');
+if ($namePrefix === '') {
+    $namePrefix = (string) time();
+}
+
+try {
+    $pdfBinary = createPdfFromHtml($html);
+    $fileName = $namePrefix . '.' . $mediaTypes[$imgType]['ext'];
+
+    if ($imgType === 'application/pdf') {
+        respondJson(200, array(
+            'action' => 'success',
+            'statusCode' => 200,
+            'contentType' => 'application/pdf',
+            'fileName' => $fileName,
+            'base64' => base64_encode($pdfBinary),
+            'dataUri' => 'data:application/pdf;base64,' . base64_encode($pdfBinary),
+            'requestTimestamp' => $requestTimestamp,
+        ));
+    }
+
+    if (!extension_loaded('imagick')) {
+        respondJson(501, array(
+            'action' => 'fail',
+            'statusCode' => 501,
+            'error' => 'Imagick is not available in this PHP runtime, so raster image conversion cannot run on this deployment.',
+            'requestTimestamp' => $requestTimestamp,
+            'fallback' => array(
+                'contentType' => 'application/pdf',
+                'fileName' => $namePrefix . '.pdf',
+                'base64' => base64_encode($pdfBinary),
+            ),
+        ));
+    }
+
+    $imageBinary = convertPdfToImage($pdfBinary, $mediaTypes[$imgType]['format'], $width, $height);
+    respondJson(200, array(
+        'action' => 'success',
+        'statusCode' => 200,
+        'contentType' => $imgType,
+        'fileName' => $fileName,
+        'width' => $width,
+        'height' => $height,
+        'base64' => base64_encode($imageBinary),
+        'dataUri' => 'data:' . $imgType . ';base64,' . base64_encode($imageBinary),
+        'requestTimestamp' => $requestTimestamp,
+    ));
+} catch (Html2PdfException $exception) {
+    respondJson(500, array(
+        'action' => 'fail',
+        'error' => $exception->getMessage(),
+        'requestTimestamp' => $requestTimestamp,
+    ));
+} catch (Throwable $throwable) {
+    respondJson(500, array(
+        'action' => 'fail',
+        'error' => $throwable->getMessage(),
+        'requestTimestamp' => $requestTimestamp,
+    ));
+}
